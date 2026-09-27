@@ -20,7 +20,9 @@ import {
   Wifi,
   Share2,
   QrCode,
-  Link as LinkIcon
+  Link as LinkIcon,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { OnlineRoomData, GameLevel, QuestionType, QuestionVerdict } from '../types/game';
 import { evaluateQuestion, getNumbersToEliminate, formatTime } from '../utils/helpers';
@@ -863,155 +865,286 @@ export const OnlineGameBoard: React.FC<OnlineGameBoardProps> = ({
 
       {/* Main Playing Interface if no pending question */}
       {!room.pendingQuestion && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.25fr) minmax(0, 1fr)',
-          gap: '1.25rem'
-        }}>
+        <div className="game-arena-grid">
           {/* Left Column: Action Panel */}
-          <div className="glass-panel" style={{ padding: '1.5rem', opacity: isMyTurn ? 1 : 0.65 }}>
+          <div id="online-turn-action-panel" className="glass-panel game-turn-panel" style={{ opacity: isMyTurn ? 1 : 0.65 }}>
             <div style={{
               display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               gap: '0.5rem',
-              padding: '0.35rem',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--bg-secondary)',
-              marginBottom: '1.25rem'
+              marginBottom: '1rem',
+              flexWrap: 'wrap'
             }}>
-              <button
-                type="button"
-                disabled={!isMyTurn}
-                onClick={() => setActionTab('question')}
-                className="btn btn-sm"
-                style={{
-                  flex: 1,
-                  background: actionTab === 'question' ? 'var(--bg-surface-elevated)' : 'transparent',
-                  color: actionTab === 'question' ? 'var(--accent-primary)' : 'var(--text-secondary)'
-                }}
-              >
-                <HelpCircle size={15} /> Ask Question
-              </button>
+              <div className="action-tabs-container" style={{ flex: 1, marginBottom: 0 }}>
+                <button
+                  type="button"
+                  disabled={!isMyTurn}
+                  onClick={() => setActionTab('question')}
+                  className="btn btn-sm action-tab-btn"
+                  style={{
+                    background: actionTab === 'question' ? 'var(--bg-surface-elevated)' : 'transparent',
+                    color: actionTab === 'question' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                    boxShadow: actionTab === 'question' ? 'var(--shadow-sm)' : 'none',
+                    borderColor: actionTab === 'question' ? 'var(--border-subtle)' : 'transparent'
+                  }}
+                >
+                  <HelpCircle size={15} style={{ flexShrink: 0 }} />
+                  <span>Ask Question</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!isMyTurn}
+                  onClick={() => setActionTab('guess')}
+                  className="btn btn-sm action-tab-btn"
+                  style={{
+                    background: actionTab === 'guess' ? 'var(--bg-surface-elevated)' : 'transparent',
+                    color: actionTab === 'guess' ? 'var(--accent-rose)' : 'var(--text-secondary)',
+                    boxShadow: actionTab === 'guess' ? 'var(--shadow-sm)' : 'none',
+                    borderColor: actionTab === 'guess' ? 'var(--border-subtle)' : 'transparent'
+                  }}
+                >
+                  <Target size={15} style={{ flexShrink: 0 }} />
+                  <span>Make Exact Guess</span>
+                </button>
+              </div>
 
               <button
                 type="button"
-                disabled={!isMyTurn}
-                onClick={() => setActionTab('guess')}
-                className="btn btn-sm"
-                style={{
-                  flex: 1,
-                  background: actionTab === 'guess' ? 'var(--bg-surface-elevated)' : 'transparent',
-                  color: actionTab === 'guess' ? 'var(--accent-rose)' : 'var(--text-secondary)'
+                onClick={() => {
+                  const el = document.getElementById('online-scratchpad-panel');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
+                className="mobile-jump-scratchpad"
+                title="Jump to Scratchpad"
               >
-                <Target size={15} /> Exact Guess
+                <span>Scratchpad</span>
+                <ChevronDown size={14} />
               </button>
             </div>
 
             {actionTab === 'question' ? (
-              <form onSubmit={handleSendQuestion} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
-                  {[
-                    { id: 'greater', label: '> Greater' },
-                    { id: 'less', label: '< Less' },
-                    { id: 'equal', label: '= Equal' },
-                    { id: 'even', label: 'Even/Odd' },
-                    { id: 'divisible', label: 'Divisible by' },
-                    { id: 'prime', label: 'Is Prime' },
-                    { id: 'digit', label: 'Digit' },
-                    { id: 'between', label: 'Between' },
-                    { id: 'custom', label: 'Custom' }
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      disabled={!isMyTurn}
-                      onClick={() => setQuestionType(item.id as QuestionType)}
-                      className="btn btn-sm"
-                      style={{
-                        background: questionType === item.id ? 'var(--p1-bg)' : 'var(--bg-secondary)',
-                        color: questionType === item.id ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                        borderColor: questionType === item.id ? 'var(--accent-primary)' : 'var(--border-subtle)',
-                        fontSize: '0.78rem'
-                      }}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
+              <form onSubmit={handleSendQuestion} className="question-form">
+                <div>
+                  <label className="section-label">
+                    Select Question Type
+                  </label>
+                  <div className="question-type-grid">
+                    {[
+                      { id: 'greater', label: '> Greater than' },
+                      { id: 'less', label: '< Less than' },
+                      { id: 'equal', label: '= Equal to' },
+                      { id: 'even', label: 'Even / Odd' },
+                      { id: 'divisible', label: 'Divisible by' },
+                      { id: 'prime', label: 'Is Prime' },
+                      { id: 'digit', label: 'Contains digit' },
+                      { id: 'between', label: 'Between [A–B]' },
+                      { id: 'custom', label: 'Custom text' }
+                    ].map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        disabled={!isMyTurn}
+                        onClick={() => setQuestionType(item.id as QuestionType)}
+                        className="btn btn-sm question-type-btn"
+                        style={{
+                          background: questionType === item.id ? 'var(--p1-bg)' : 'var(--bg-secondary)',
+                          color: questionType === item.id ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                          borderColor: questionType === item.id ? 'var(--accent-primary)' : 'var(--border-subtle)',
+                          fontWeight: questionType === item.id ? 800 : 600
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {(questionType === 'greater' || questionType === 'less' || questionType === 'equal') && (
-                  <input
-                    type="number"
-                    disabled={!isMyTurn}
-                    className="input-field input-number"
-                    value={paramA}
-                    min={room.level.rangeMin}
-                    max={room.level.rangeMax}
-                    onChange={(e) => setParamA(parseInt(e.target.value) || room.level.rangeMin)}
-                  />
+                  <div>
+                    <div className="label-with-badge">
+                      <label className="section-label" style={{ marginBottom: 0 }}>
+                        Comparison Value
+                      </label>
+                      <span className="range-badge">
+                        Range: {room.level.rangeMin}–{room.level.rangeMax}
+                      </span>
+                    </div>
+                    <input
+                      type="number"
+                      disabled={!isMyTurn}
+                      className="input-field input-number"
+                      value={paramA}
+                      min={room.level.rangeMin}
+                      max={room.level.rangeMax}
+                      onChange={(e) => setParamA(parseInt(e.target.value) || room.level.rangeMin)}
+                      required
+                    />
+                  </div>
+                )}
+
+                {questionType === 'even' && (
+                  <div className="info-box">
+                    Asks if the opponent's number is divisible by 2 (even) or odd.
+                  </div>
                 )}
 
                 {questionType === 'divisible' && (
-                  <input
-                    type="number"
-                    disabled={!isMyTurn}
-                    className="input-field input-number"
-                    value={paramA}
-                    min={2}
-                    max={room.level.rangeMax}
-                    onChange={(e) => setParamA(parseInt(e.target.value) || 2)}
-                  />
+                  <div>
+                    <div className="label-with-badge">
+                      <label className="section-label" style={{ marginBottom: 0 }}>
+                        Divisor
+                      </label>
+                      <span className="range-badge">
+                        2 to {room.level.rangeMax}
+                      </span>
+                    </div>
+                    <input
+                      type="number"
+                      disabled={!isMyTurn}
+                      className="input-field input-number"
+                      value={paramA}
+                      min={2}
+                      max={room.level.rangeMax}
+                      onChange={(e) => setParamA(parseInt(e.target.value) || 2)}
+                      required
+                    />
+                  </div>
+                )}
+
+                {questionType === 'prime' && (
+                  <div className="info-box">
+                    Asks if the opponent's secret number is a prime number (e.g. 2, 3, 5, 7, 11...).
+                  </div>
+                )}
+
+                {questionType === 'digit' && (
+                  <div>
+                    <div className="label-with-badge">
+                      <label className="section-label" style={{ marginBottom: 0 }}>
+                        Contains Digit
+                      </label>
+                      <span className="range-badge">
+                        0 to 9
+                      </span>
+                    </div>
+                    <input
+                      type="number"
+                      disabled={!isMyTurn}
+                      className="input-field input-number"
+                      value={paramA}
+                      min={0}
+                      max={9}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setParamA(isNaN(val) ? 0 : Math.min(9, Math.max(0, val)));
+                      }}
+                      required
+                    />
+                  </div>
+                )}
+
+                {questionType === 'between' && (
+                  <div>
+                    <div className="label-with-badge">
+                      <label className="section-label" style={{ marginBottom: 0 }}>
+                        Between Range [A to B]
+                      </label>
+                      <span className="range-badge">
+                        Range: {room.level.rangeMin}–{room.level.rangeMax}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>From</label>
+                        <input
+                          type="number"
+                          disabled={!isMyTurn}
+                          className="input-field input-number"
+                          value={paramA}
+                          min={room.level.rangeMin}
+                          max={paramB}
+                          onChange={(e) => setParamA(parseInt(e.target.value) || room.level.rangeMin)}
+                        />
+                      </div>
+                      <span style={{ fontWeight: 800, marginTop: '1.2rem' }}>to</span>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>To</label>
+                        <input
+                          type="number"
+                          disabled={!isMyTurn}
+                          className="input-field input-number"
+                          value={paramB}
+                          min={paramA}
+                          max={room.level.rangeMax}
+                          onChange={(e) => setParamB(parseInt(e.target.value) || room.level.rangeMax)}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 {questionType === 'custom' && (
-                  <input
-                    type="text"
-                    disabled={!isMyTurn}
-                    className="input-field"
-                    placeholder="Type custom Yes/No question..."
-                    value={customQuestionText}
-                    onChange={(e) => setCustomQuestionText(e.target.value)}
-                  />
+                  <div>
+                    <label className="section-label">
+                      Custom Yes/No Question
+                    </label>
+                    <input
+                      type="text"
+                      disabled={!isMyTurn}
+                      className="input-field"
+                      placeholder="Type custom Yes/No question..."
+                      value={customQuestionText}
+                      onChange={(e) => setCustomQuestionText(e.target.value)}
+                      required
+                    />
+                  </div>
                 )}
 
-                <div style={{
-                  padding: '0.75rem',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg-secondary)',
-                  fontSize: '0.95rem',
-                  fontWeight: 700
-                }}>
-                  "{getConstructedQuestionText()}"
+                {/* Preview Box */}
+                <div className="question-preview-box">
+                  <div className="preview-label">
+                    Question Preview
+                  </div>
+                  <div className="preview-text">
+                    "{getConstructedQuestionText()}"
+                  </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={!isMyTurn}
                   className="btn btn-primary"
-                  style={{ width: '100%', gap: '0.5rem' }}
+                  style={{ width: '100%', gap: '0.5rem', marginTop: '0.25rem', minHeight: '48px' }}
                 >
                   <Send size={16} /> Send Question
                 </button>
               </form>
             ) : (
-              <form onSubmit={handleMakeGuess} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <input
-                  type="number"
-                  disabled={!isMyTurn}
-                  className="input-field input-number"
-                  style={{ fontSize: '2.5rem', padding: '0.75rem' }}
-                  value={guessInput}
-                  min={room.level.rangeMin}
-                  max={room.level.rangeMax}
-                  placeholder="?"
-                  onChange={(e) => setGuessInput(e.target.value)}
-                  required
-                />
+              <form onSubmit={handleMakeGuess} className="guess-form">
+                <div>
+                  <label className="section-label" style={{ fontSize: '0.95rem', marginBottom: '0.5rem' }}>
+                    What is the opponent's secret number?
+                  </label>
+                  <input
+                    type="number"
+                    disabled={!isMyTurn}
+                    className="input-field input-number"
+                    style={{ fontSize: '2.5rem', padding: '0.85rem' }}
+                    value={guessInput}
+                    min={room.level.rangeMin}
+                    max={room.level.rangeMax}
+                    placeholder="?"
+                    onChange={(e) => setGuessInput(e.target.value)}
+                    required
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={!isMyTurn}
                   className="btn btn-rose btn-lg"
-                  style={{ width: '100%', gap: '0.5rem' }}
+                  style={{ width: '100%', gap: '0.5rem', minHeight: '48px', marginTop: 'auto' }}
                 >
                   <Target size={18} /> Make Guess
                 </button>
@@ -1020,15 +1153,33 @@ export const OnlineGameBoard: React.FC<OnlineGameBoardProps> = ({
           </div>
 
           {/* Right Column: Scratchpad */}
-          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <h3 style={{ fontSize: '1.05rem', margin: 0 }}>Scratchpad</h3>
-              <button onClick={handleAutoEliminate} className="btn btn-sm btn-secondary" style={{ gap: '0.3rem', fontSize: '0.75rem' }}>
-                <Sparkles size={12} color="var(--accent-primary)" /> Auto-Deduce
-              </button>
+          <div id="online-scratchpad-panel" className="glass-panel game-scratchpad-panel">
+            <div className="scratchpad-header">
+              <div>
+                <h3 className="scratchpad-title">Tactical Scratchpad</h3>
+                <span className="scratchpad-subtitle">Personal deduction notes</span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                <button onClick={handleAutoEliminate} className="btn btn-sm btn-secondary" style={{ gap: '0.3rem', fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}>
+                  <Sparkles size={12} color="var(--accent-primary)" /> Auto-Deduce
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById('online-turn-action-panel');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="mobile-jump-scratchpad"
+                  style={{ padding: '0.25rem 0.5rem' }}
+                  title="Scroll back up"
+                >
+                  <ChevronUp size={14} />
+                  <span>Top</span>
+                </button>
+              </div>
             </div>
 
-            <div className="scratchpad-grid" style={{ flex: 1, minHeight: '220px' }}>
+            <div className="scratchpad-grid" style={{ flex: 1, minHeight: '200px' }}>
               {Array.from({ length: room.level.rangeMax - room.level.rangeMin + 1 }, (_, i) => {
                 const num = room.level.rangeMin + i;
                 const isEliminated = eliminatedNumbers.includes(num);
@@ -1043,11 +1194,19 @@ export const OnlineGameBoard: React.FC<OnlineGameBoardProps> = ({
                     key={num}
                     onClick={() => toggleNumber(num)}
                     className={className}
+                    title={`Number ${num}: Tap to toggle state`}
                   >
                     {num}
                   </div>
                 );
               })}
+            </div>
+
+            <div className="scratchpad-legend">
+              <span>Tap: Strike ➔ Star ➔ Clear</span>
+              <span style={{ fontWeight: 700 }}>
+                {room.level.rangeMax - room.level.rangeMin + 1 - eliminatedNumbers.length} candidates left
+              </span>
             </div>
           </div>
         </div>

@@ -1,52 +1,32 @@
-# Guessr 🎮
+# React + TypeScript + Vite
 
-Welcome to **Guessr**!
-Guessr is a complete, modern web game built with React, Vite, TypeScript, and a customized CSS design system with rich glassmorphism, responsive tactile controls, synthesizer audio, and real-time multiplayer support
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-## 🚀 Live Demo
+Currently, two official plugins are available:
 
-Check out the live application here: **[Guessr App](https://guessr-eight.vercel.app)**
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## 🛠️ Tech Stack
+## React Compiler
 
-This project is built with:
-* **React**
-* **TypeScript**
-* **Vite**
-* **CSS**
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## 💻 Getting Started
+## Expanding the Oxlint configuration
 
-To get a local copy up and running, follow these simple steps.
+If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
 
-### Prerequisites
-Make sure you have Node.js installed on your machine.
+```json
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
+```
 
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/aishani03/guessr.git](https://github.com/aishani03/guessr.git)
-
-2. Navigate to the project directory:
-     ```bash
-    cd guessr
-
-4. Install dependencies:
-    ```bash
-    npm install
-
-5. Start the development server:
-    ```bash
-   npm run dev
-
-6.  Open your browser and visit
- http://localhost:5173  to view the app
-
-🤝 Contributing
-
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/aishani03/guessr/issues).
-
-
-👤 Author
-Aishani R K - [aishani03](https://github.com/aishani03)
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.

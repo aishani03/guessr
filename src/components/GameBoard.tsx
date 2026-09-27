@@ -10,20 +10,12 @@ import {
   Check,
   X,
   RotateCcw,
-  Zap,
-  Info,
-  Shield,
-  Eye,
-  SlidersHorizontal,
-  Flame,
-  AlertTriangle
+  Flame
 } from 'lucide-react';
 import {
   GameState,
-  PlayerId,
   QuestionType,
   QuestionRecord,
-  GuessRecord,
   QuestionVerdict
 } from '../types/game';
 import {
@@ -35,8 +27,7 @@ import {
   playTapSound,
   playYesSound,
   playNoSound,
-  playTickSound,
-  playTurnChime
+  playTickSound
 } from '../utils/sound';
 
 interface GameBoardProps {
@@ -80,9 +71,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const [guessInput, setGuessInput] = useState<string>('');
   const [guessError, setGuessError] = useState<string | null>(null);
 
-  // History Tab & Scratchpad toggle
+  // History Tab
   const [historyTab, setHistoryTab] = useState<'questions' | 'guesses'>('questions');
-  const [showScratchpad, setShowScratchpad] = useState<boolean>(true);
 
   // Turn Timer effect
   const [timerLeft, setTimerLeft] = useState<number | null>(gameState.level.timerSeconds);
@@ -452,71 +442,78 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         </div>
       ) : (
         /* Regular Playing Turn: Choose Ask Question or Make Guess */
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.25fr) minmax(0, 1fr)',
-          gap: '1.25rem'
-        }}>
+        <div className="game-arena-grid">
           {/* Left Column: Turn Action Panel */}
-          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-            {/* Action Tabs */}
+          <div id="game-turn-action-panel" className="glass-panel game-turn-panel">
+            {/* Action Tabs & Mobile Scratchpad Jump */}
             <div style={{
               display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               gap: '0.5rem',
-              padding: '0.35rem',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--bg-secondary)',
-              marginBottom: '1.25rem'
+              marginBottom: '1rem',
+              flexWrap: 'wrap'
             }}>
-              <button
-                type="button"
-                onClick={() => {
-                  playTapSound();
-                  setActionTab('question');
-                }}
-                className="btn btn-sm"
-                style={{
-                  flex: 1,
-                  background: actionTab === 'question' ? 'var(--bg-surface-elevated)' : 'transparent',
-                  color: actionTab === 'question' ? playerThemeColor : 'var(--text-secondary)',
-                  boxShadow: actionTab === 'question' ? 'var(--shadow-sm)' : 'none',
-                  borderColor: actionTab === 'question' ? 'var(--border-subtle)' : 'transparent'
-                }}
-              >
-                <HelpCircle size={16} /> Ask Question {questionsLeft !== null ? `(${questionsLeft} left)` : ''}
-              </button>
+              <div className="action-tabs-container" style={{ flex: 1, marginBottom: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTapSound();
+                    setActionTab('question');
+                  }}
+                  className="btn btn-sm action-tab-btn"
+                  style={{
+                    background: actionTab === 'question' ? 'var(--bg-surface-elevated)' : 'transparent',
+                    color: actionTab === 'question' ? playerThemeColor : 'var(--text-secondary)',
+                    boxShadow: actionTab === 'question' ? 'var(--shadow-sm)' : 'none',
+                    borderColor: actionTab === 'question' ? 'var(--border-subtle)' : 'transparent'
+                  }}
+                >
+                  <HelpCircle size={15} style={{ flexShrink: 0 }} />
+                  <span>Ask Question {questionsLeft !== null ? `(${questionsLeft})` : ''}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTapSound();
+                    setActionTab('guess');
+                  }}
+                  className="btn btn-sm action-tab-btn"
+                  style={{
+                    background: actionTab === 'guess' ? 'var(--bg-surface-elevated)' : 'transparent',
+                    color: actionTab === 'guess' ? 'var(--accent-rose)' : 'var(--text-secondary)',
+                    boxShadow: actionTab === 'guess' ? 'var(--shadow-sm)' : 'none',
+                    borderColor: actionTab === 'guess' ? 'var(--border-subtle)' : 'transparent'
+                  }}
+                >
+                  <Target size={15} style={{ flexShrink: 0 }} />
+                  <span>Make Exact Guess {guessesLeft !== null ? `(${guessesLeft})` : ''}</span>
+                </button>
+              </div>
 
               <button
                 type="button"
                 onClick={() => {
-                  playTapSound();
-                  setActionTab('guess');
+                  const el = document.getElementById('tactical-scratchpad-panel');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="btn btn-sm"
-                style={{
-                  flex: 1,
-                  background: actionTab === 'guess' ? 'var(--bg-surface-elevated)' : 'transparent',
-                  color: actionTab === 'guess' ? 'var(--accent-rose)' : 'var(--text-secondary)',
-                  boxShadow: actionTab === 'guess' ? 'var(--shadow-sm)' : 'none',
-                  borderColor: actionTab === 'guess' ? 'var(--border-subtle)' : 'transparent'
-                }}
+                className="mobile-jump-scratchpad"
+                title="Jump to Tactical Scratchpad"
               >
-                <Target size={16} /> Make Exact Guess {guessesLeft !== null ? `(${guessesLeft} left)` : ''}
+                <span>Scratchpad ({gameState.level.rangeMax - gameState.level.rangeMin + 1 - activePlayer.eliminatedNumbers.length})</span>
+                <ChevronDown size={14} />
               </button>
             </div>
 
             {/* TAB A: ASK QUESTION */}
             {actionTab === 'question' ? (
-              <form onSubmit={handleSendQuestion} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
+              <form onSubmit={handleSendQuestion} className="question-form">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.45rem' }}>
+                  <label className="section-label">
                     Select Question Type
                   </label>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: '0.45rem'
-                  }}>
+                  <div className="question-type-grid">
                     {[
                       { id: 'greater', label: '> Greater than' },
                       { id: 'less', label: '< Less than' },
@@ -535,13 +532,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                           playTapSound();
                           setQuestionType(item.id as QuestionType);
                         }}
-                        className="btn btn-sm"
+                        className="btn btn-sm question-type-btn"
                         style={{
-                          fontSize: '0.78rem',
-                          padding: '0.45rem 0.4rem',
                           background: questionType === item.id ? playerBg : 'var(--bg-secondary)',
                           borderColor: questionType === item.id ? playerThemeColor : 'var(--border-subtle)',
-                          color: questionType === item.id ? playerThemeColor : 'var(--text-secondary)'
+                          color: questionType === item.id ? playerThemeColor : 'var(--text-secondary)',
+                          fontWeight: questionType === item.id ? 800 : 600
                         }}
                       >
                         {item.label}
@@ -553,9 +549,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 {/* Parameters for selected type */}
                 {(questionType === 'greater' || questionType === 'less' || questionType === 'equal') && (
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                      Comparison Value ({gameState.level.rangeMin} to {gameState.level.rangeMax})
-                    </label>
+                    <div className="label-with-badge">
+                      <label className="section-label" style={{ marginBottom: 0 }}>
+                        Comparison Value
+                      </label>
+                      <span className="range-badge">
+                        Range: {gameState.level.rangeMin}–{gameState.level.rangeMax}
+                      </span>
+                    </div>
                     <input
                       type="number"
                       className="input-field input-number"
@@ -569,22 +570,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 )}
 
                 {questionType === 'even' && (
-                  <div style={{
-                    padding: '0.85rem',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--bg-secondary)',
-                    fontSize: '0.85rem',
-                    color: 'var(--text-secondary)'
-                  }}>
+                  <div className="info-box">
                     Asks if the opponent's number is divisible by 2 (even) or odd.
                   </div>
                 )}
 
                 {questionType === 'divisible' && (
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                      Divisor
-                    </label>
+                    <div className="label-with-badge">
+                      <label className="section-label" style={{ marginBottom: 0 }}>
+                        Divisor
+                      </label>
+                      <span className="range-badge">
+                        2 to {gameState.level.rangeMax}
+                      </span>
+                    </div>
                     <input
                       type="number"
                       className="input-field input-number"
@@ -597,12 +597,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                   </div>
                 )}
 
+                {questionType === 'prime' && (
+                  <div className="info-box">
+                    Asks if the opponent's secret number is a prime number (e.g. 2, 3, 5, 7, 11...).
+                  </div>
+                )}
+
                 {questionType === 'digit' && (
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                      Digit (0–9)
-                    </label>
-                    <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
+                    <div className="label-with-badge">
+                      <label className="section-label" style={{ marginBottom: 0 }}>
+                        Digit to Check
+                      </label>
+                      <span className="range-badge">
+                        0 to 9
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                       {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
                         <button
                           key={d}
@@ -618,7 +629,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                             padding: 0,
                             background: paramA === d ? playerBg : 'var(--bg-secondary)',
                             borderColor: paramA === d ? playerThemeColor : 'var(--border-subtle)',
-                            color: paramA === d ? playerThemeColor : 'var(--text-secondary)'
+                            color: paramA === d ? playerThemeColor : 'var(--text-secondary)',
+                            fontWeight: paramA === d ? 800 : 600
                           }}
                         >
                           {d}
@@ -629,36 +641,46 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 )}
 
                 {questionType === 'between' && (
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>From</label>
-                      <input
-                        type="number"
-                        className="input-field input-number"
-                        value={paramA}
-                        min={gameState.level.rangeMin}
-                        max={paramB}
-                        onChange={(e) => setParamA(parseInt(e.target.value) || gameState.level.rangeMin)}
-                      />
+                  <div>
+                    <div className="label-with-badge">
+                      <label className="section-label" style={{ marginBottom: 0 }}>
+                        Between Range [A to B]
+                      </label>
+                      <span className="range-badge">
+                        Range: {gameState.level.rangeMin}–{gameState.level.rangeMax}
+                      </span>
                     </div>
-                    <span style={{ fontWeight: 800, marginTop: '1.2rem' }}>to</span>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>To</label>
-                      <input
-                        type="number"
-                        className="input-field input-number"
-                        value={paramB}
-                        min={paramA}
-                        max={gameState.level.rangeMax}
-                        onChange={(e) => setParamB(parseInt(e.target.value) || gameState.level.rangeMax)}
-                      />
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>From</label>
+                        <input
+                          type="number"
+                          className="input-field input-number"
+                          value={paramA}
+                          min={gameState.level.rangeMin}
+                          max={paramB}
+                          onChange={(e) => setParamA(parseInt(e.target.value) || gameState.level.rangeMin)}
+                        />
+                      </div>
+                      <span style={{ fontWeight: 800, marginTop: '1.2rem' }}>to</span>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>To</label>
+                        <input
+                          type="number"
+                          className="input-field input-number"
+                          value={paramB}
+                          min={paramA}
+                          max={gameState.level.rangeMax}
+                          onChange={(e) => setParamB(parseInt(e.target.value) || gameState.level.rangeMax)}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {questionType === 'custom' && (
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.35rem' }}>
+                    <label className="section-label">
                       Custom Yes/No Question
                     </label>
                     <input
@@ -674,32 +696,26 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                 )}
 
                 {/* Preview Box */}
-                <div style={{
-                  padding: '0.85rem',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-subtle)',
-                  marginTop: 'auto'
-                }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.2rem' }}>
+                <div className="question-preview-box">
+                  <div className="preview-label">
                     Question Preview
                   </div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  <div className="preview-text">
                     "{getConstructedQuestionText()}"
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  className={isP1 ? 'btn btn-p1' : 'btn btn-p2'}
-                  style={{ width: '100%', gap: '0.5rem', marginTop: '0.25rem' }}
+                  className={isP1 ? 'btn btn-p1 btn-lg' : 'btn btn-p2 btn-lg'}
+                  style={{ width: '100%', gap: '0.5rem', marginTop: '0.25rem', minHeight: '48px' }}
                 >
                   <Send size={18} /> Ask Opponent
                 </button>
               </form>
             ) : (
               /* TAB B: MAKE EXACT GUESS */
-              <form onSubmit={handleMakeGuessSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
+              <form onSubmit={handleMakeGuessSubmit} className="guess-form">
                 <div style={{
                   padding: '1rem',
                   borderRadius: 'var(--radius-md)',
@@ -741,11 +757,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                   )}
                 </div>
 
-                <div style={{ marginTop: 'auto' }}>
+                <div style={{ marginTop: 'auto', paddingTop: '0.5rem' }}>
                   <button
                     type="submit"
                     className="btn btn-rose btn-lg"
-                    style={{ width: '100%', gap: '0.5rem' }}
+                    style={{ width: '100%', gap: '0.5rem', minHeight: '48px' }}
                   >
                     <Target size={20} /> Submit Exact Guess
                   </button>
@@ -755,27 +771,22 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           </div>
 
           {/* Right Column: Tactical Scratchpad / Number Matrix */}
-          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '0.85rem'
-            }}>
+          <div id="tactical-scratchpad-panel" className="glass-panel game-scratchpad-panel">
+            <div className="scratchpad-header">
               <div>
-                <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Tactical Scratchpad</h3>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                <h3 className="scratchpad-title">Tactical Scratchpad</h3>
+                <span className="scratchpad-subtitle">
                   {activePlayer.name}'s private deduction notes
                 </span>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                 <button
                   type="button"
                   onClick={handleRunAutoEliminate}
                   className="btn btn-sm btn-secondary"
                   title="Auto-eliminate numbers based on answers received"
-                  style={{ gap: '0.35rem', fontSize: '0.75rem' }}
+                  style={{ gap: '0.35rem', fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
                 >
                   <Sparkles size={13} color="var(--accent-primary)" /> Auto-Deduce
                 </button>
@@ -787,16 +798,30 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     onResetScratchpad();
                   }}
                   className="btn-icon"
-                  style={{ width: '28px', height: '28px' }}
+                  style={{ width: '32px', height: '32px' }}
                   title="Reset scratchpad"
                 >
-                  <RotateCcw size={13} />
+                  <RotateCcw size={14} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById('game-turn-action-panel');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="mobile-jump-scratchpad"
+                  style={{ padding: '0.25rem 0.5rem' }}
+                  title="Scroll back up to Turn Actions"
+                >
+                  <ChevronUp size={14} />
+                  <span>Top</span>
                 </button>
               </div>
             </div>
 
             {/* Scratchpad Grid */}
-            <div className="scratchpad-grid" style={{ flex: 1, minHeight: '220px' }}>
+            <div className="scratchpad-grid" style={{ flex: 1, minHeight: '200px' }}>
               {Array.from({ length: gameState.level.rangeMax - gameState.level.rangeMin + 1 }, (_, i) => {
                 const num = gameState.level.rangeMin + i;
                 const isEliminated = activePlayer.eliminatedNumbers.includes(num);
@@ -823,17 +848,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
 
             {/* Legend */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginTop: '0.75rem',
-              fontSize: '0.75rem',
-              color: 'var(--text-muted)'
-            }}>
+            <div className="scratchpad-legend">
               <span>Tap: Strike ➔ Star ➔ Clear</span>
-              <span>
-                Left: {gameState.level.rangeMax - gameState.level.rangeMin + 1 - activePlayer.eliminatedNumbers.length} candidates
+              <span style={{ fontWeight: 700 }}>
+                {gameState.level.rangeMax - gameState.level.rangeMin + 1 - activePlayer.eliminatedNumbers.length} candidates left
               </span>
             </div>
           </div>
